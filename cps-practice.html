@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CPS Practice</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="cps-test.html">CPS Test</a>
+    <a href="cps-practice.html">CPS Practice</a>
+    <a href="typing.html">Typing Practice</a>
+    <a href="minigames.html">Mini Games</a>
+  </nav>
+
+  <h1>CPS Practice</h1>
+  <p>Click the button to practice your speed without a timer.</p>
+  <button id="practice-btn">Click Me!</button>
+  <p>Clicks: <span id="count">0</span></p>
+
+  <script>
+    let clicks = 0;
+    document.getElementById("practice-btn").onclick = () => {
+      clicks++;
+      document.getElementById("count").textContent = clicks;
+    };
+  </script>
+</body>
+</html>
