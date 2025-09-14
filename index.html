@@ -1,54 +1,882 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GameHub</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MiniPlay — All-in-one</title>
+<style>
+  /* ---------------- Global ---------------- */
+  :root{
+    --bg:#050507; --panel:#0f0f11; --muted:#9aa4b2;
+    --accent:#29d07b; --accent-dark:#16a34a; --glass:rgba(255,255,255,0.03);
+    --glass-2: rgba(255,255,255,0.02);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:Inter,Roboto,Arial,sans-serif;background:
+    linear-gradient(180deg,#050507,#0b0b0d);color:#e8f7ef;line-height:1.45;
+    -webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;
+  }
+  a{color:inherit;text-decoration:none}
+  .hidden{display:none}
+
+  /* Loader */
+  #loader{
+    position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,rgba(0,0,0,0.6),rgba(0,0,0,0.3));z-index:9999;
+  }
+  .spinner{width:64px;height:64px;border-radius:50%;border:8px solid rgba(255,255,255,0.08);border-top-color:var(--accent);animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #loader p{margin-top:14px;color:var(--muted)}
+
+  /* Container & header */
+  .wrap{max-width:1100px;margin:28px auto;padding:20px}
+  .brand{font-weight:900;font-size:22px;color:var(--accent);margin-bottom:6px}
+  .subtitle{color:var(--muted);margin-bottom:18px}
+
+  /* Home grid (cards) */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);
+    padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);
+    box-shadow:0 8px 30px rgba(0,0,0,0.55);cursor:pointer;transition:transform .14s,box-shadow .14s;
+  }
+  .card:hover{transform:translateY(-6px);box-shadow:0 18px 46px rgba(0,0,0,0.7)}
+  .card h3{margin:0 0 8px 0}
+  .card p{margin:0;color:var(--muted);font-size:13px}
+
+  /* Buttons */
+  .btn{background:var(--accent);color:#03150e;padding:10px 16px;border-radius:10px;border:none;font-weight:800;cursor:pointer}
+  .btn.small{padding:8px 10px;border-radius:8px}
+  .muted{color:var(--muted);font-size:13px}
+  .center{text-align:center}
+
+  /* Sections */
+  section{display:none}
+  section.active{display:block}
+
+  /* Shared card */
+  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 8px 28px rgba(0,0,0,0.5)}
+
+  /* CPS */
+  .cps-area{display:flex;flex-direction:column;align-items:center;gap:12px}
+  #cps-target{width:420px;height:200px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));cursor:crosshair;border:1px solid rgba(255,255,255,0.03)}
+  #cps-counter{font-size:44px;font-weight:900}
+  #cps-status{color:var(--muted)}
+  .progress-wrap{width:92%;height:10px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden;margin-top:12px}
+  .progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-dark));transition:width .08s}
+
+  /* Modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.66);display:flex;align-items:center;justify-content:center;z-index:2000}
+  .modal{background:linear-gradient(180deg,#0b0b0d,#0f1211);padding:20px;border-radius:12px;width:340px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 12px 40px rgba(0,0,0,0.6);text-align:center}
+  .modal h2{margin:6px 0 8px 0}
+  .modal .muted{margin-bottom:8px}
+
+  /* Typing */
+  .typing-area{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:12px;align-items:center}
+  .target-box{width:90%;background:rgba(255,255,255,0.02);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);font-family:monospace;min-height:70px}
+  .target-animated{opacity:0;display:inline-block}
+  .controls-row{display:flex;gap:10px;align-items:center}
+  input[type="text"]{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff;width:90%;font-size:15px}
+
+  /* color markers for typed chars */
+  .ch-correct{color:#66ff9a;font-weight:700}
+  .ch-wrong{color:#ff6b6b;font-weight:700}
+  .ch-close{color:#7fb3ff;font-weight:700}
+  .ch-skip{color:#ffd166;font-weight:700}
+  .ch-next{opacity:0.6}
+
+  /* Chess board */
+  .chess-wrap{display:flex;gap:20px;flex-wrap:wrap}
+  .board{display:grid;grid-template-columns:repeat(8,56px);grid-auto-rows:56px;padding:6px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+  .square{display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;border-radius:6px;user-select:none}
+  .light{background:linear-gradient(180deg,#f6f6f6,#e9e9e9);color:#111}
+  .dark{background:linear-gradient(180deg,#6b4f39,#4a2b14);color:#fff}
+  .highlight{outline:3px solid rgba(41,208,123,0.25)}
+
+  /* profile */
+  .profile-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .stat{background:rgba(255,255,255,0.02);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+
+  /* small screens */
+  @media(max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}.board{transform:scale(0.9)}}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}.board{transform:scale(0.78)}}
+</style>
 </head>
 <body>
-  <!-- Loader -->
-  <div id="loader">
-    <div class="spinner"></div>
-    <p>Loading...</p>
-  </div>
 
-  <!-- Main content -->
-  <div id="app" class="hidden">
-    <div class="container">
-      <h1>🎮 GameHub</h1>
-      <div id="login-section">
-        <h2>Login</h2>
-        <input type="text" id="username" placeholder="Enter username" />
-        <button class="btn" onclick="login()">Login</button>
+<!-- LOADER -->
+<div id="loader">
+  <div class="spinner"></div>
+  <p>Loading MiniPlay...</p>
+</div>
+
+<!-- APP -->
+<div class="wrap" id="app" style="display:none">
+
+  <div class="brand">MiniPlay</div>
+  <div class="subtitle" id="subtitle">Practice clicking, typing & more — fully local, single file.</div>
+
+  <!-- LOGIN / PROFILE -->
+  <div id="loginPanel" class="panel" style="margin-bottom:16px">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="flex:1">
+        <label class="muted">Username</label><br>
+        <input id="usernameInput" type="text" placeholder="Enter username (will save locally)" style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);width:60%">
+        <button class="btn small" id="loginBtn">Login / Use</button>
+        <button class="btn small" id="logoutBtn" style="display:none;background:#ff6b6b">Sign out</button>
       </div>
-
-      <div id="home-section" class="hidden">
-        <h2>Welcome, <span id="playerName"></span>!</h2>
-        <div class="card">
-          <h3>CPS Test</h3>
-          <p>Test your clicks per second speed.</p>
-          <a href="cps.html" class="btn">Start CPS Test</a>
-        </div>
-        <div class="card">
-          <h3>Typing Practice</h3>
-          <p>Improve your typing speed and accuracy.</p>
-          <a href="typing.html" class="btn">Start Typing</a>
-        </div>
-        <div class="card">
-          <h3>Chess</h3>
-          <p>Play chess with your friend on the same device.</p>
-          <a href="chess.html" class="btn">Play Chess</a>
-        </div>
-        <div class="card">
-          <h3>Profile</h3>
-          <p>View your stats and saved data.</p>
-          <a href="profile.html" class="btn">View Profile</a>
-        </div>
+      <div style="min-width:260px;text-align:right">
+        <div id="who" style="font-weight:700">Not signed in</div>
+        <div class="muted" style="font-size:13px">Stats are saved per username in your browser.</div>
       </div>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- HOME (cards linking to sections) -->
+  <div id="home" class="active">
+    <div class="grid">
+      <div class="card" onclick="showSection('cps')">
+        <h3>CPS Test (timed)</h3>
+        <p>Full-screen click area — starts on first click. Results modal with rarity. Saves best CPS.</p>
+      </div>
+
+      <div class="card" onclick="showSection('cpsPractice')">
+        <h3>CPS Practice</h3>
+        <p>Warm-up area with method toggle (Left / Space / Right / Alternate).</p>
+      </div>
+
+      <div class="card" onclick="showSection('typing')">
+        <h3>Typing Practice</h3>
+        <p>Animated target text, colored feedback (green/red/blue/yellow), WPM/KPS/accuracy, save results.</p>
+      </div>
+
+      <div class="card" onclick="showSection('chess')">
+        <h3>Chess (Local)</h3>
+        <p>Play 2-player locally. Click piece → click destination. Basic rules supported.</p>
+      </div>
+
+      <div class="card" onclick="showSection('profile')">
+        <h3>Profile & Saved Data</h3>
+        <p>View saved best CPS & typing results for the signed-in username.</p>
+      </div>
+
+      <div class="card" onclick="alert('Request more games via chat — I will add them')">
+        <h3>Request Games</h3>
+        <p>Want an aim trainer, reflex test, or rhythm game first? Tell me and I’ll add it.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CPS Test SECTION -->
+  <section id="cps" class="panel" style="margin-top:18px;display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><h2 style="margin:0">CPS Test</h2><div class="muted">Click inside the big box — test starts on first click</div></div>
+      <div><button class="btn small" onclick="showSection('home')">Back Home</button></div>
+    </div>
+
+    <div style="margin-top:14px" class="cps-area">
+      <div style="display:flex;gap:8px;align-items:center">
+        <label class="muted">Duration</label>
+        <select id="cpsDuration">
+          <option value="1">1s</option>
+          <option value="3">3s</option>
+          <option value="5" selected>5s</option>
+          <option value="10">10s</option>
+          <option value="15">15s</option>
+        </select>
+
+        <label class="muted">Method</label>
+        <select id="cpsMethod">
+          <option value="left">Left</option>
+          <option value="right">Right</option>
+          <option value="space">Space</option>
+          <option value="alternate">Alternate</option>
+        </select>
+
+        <button class="btn small" id="cpsReset">Reset</button>
+      </div>
+
+      <div id="cps-target">
+        <div id="cps-counter">0</div>
+        <div id="cps-status">Ready — click inside to start</div>
+        <div class="progress-wrap" style="width:88%;margin-top:12px"><div class="progress-bar" id="cps-bar"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CPS PRACTICE -->
+  <section id="cpsPractice" class="panel" style="margin-top:18px;display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><h2 style="margin:0">CPS Practice</h2><div class="muted">Warm-up: no timer. Toggle method and practice.</div></div>
+      <div><button class="btn small" onclick="showSection('home')">Back Home</button></div>
+    </div>
+    <div style="margin-top:12px" class="center">
+      <div id="practice-target" style="width:420px;height:180px;border-radius:12px;background:var(--glass-2);display:flex;align-items:center;justify-content:center;cursor:crosshair">
+        Warm-up Area
+      </div>
+      <div style="margin-top:12px">Clicks: <strong id="practice-count">0</strong></div>
+      <div style="margin-top:10px" class="controls">
+        <button class="btn small" id="practiceReset">Reset</button>
+        <button class="btn small" id="practiceToggle">Method: Left</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPING -->
+  <section id="typing" class="panel" style="margin-top:18px;display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><h2 style="margin:0">Typing Practice</h2><div class="muted">Animated target — live colored feedback. Stop anytime.</div></div>
+      <div><button class="btn small" onclick="showSection('home')">Back Home</button></div>
+    </div>
+
+    <div style="margin-top:12px" class="typing-area">
+      <div class="target-box" id="targetBox" aria-live="polite"></div>
+      <div style="width:90%;display:flex;flex-direction:column;gap:8px;align-items:center">
+        <div class="controls-row" style="width:100%;justify-content:space-between">
+          <div>
+            <label class="muted">Duration</label>
+            <select id="typeDuration">
+              <option value="15">15s</option>
+              <option value="30" selected>30s</option>
+              <option value="60">60s</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn small" id="typeStart">Start</button>
+            <button class="btn small" id="typeStop">Stop</button>
+          </div>
+        </div>
+
+        <input id="typeInput" type="text" placeholder="Start test after pressing Start..." autocomplete="off" disabled>
+        <div style="width:100%;display:flex;justify-content:space-between">
+          <div class="muted">WPM: <strong id="wpm">0</strong></div>
+          <div class="muted">KPS: <strong id="kps">0.00</strong></div>
+          <div class="muted">Accuracy: <strong id="acc">100%</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHESS -->
+  <section id="chess" class="panel" style="margin-top:18px;display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><h2 style="margin:0">Chess — Local 2-player</h2><div class="muted">Click piece → click destination. Basic moves implemented (no checkmate detection).</div></div>
+      <div><button class="btn small" onclick="showSection('home')">Back Home</button></div>
+    </div>
+
+    <div style="margin-top:12px" class="chess-wrap">
+      <div id="board" class="board" role="grid"></div>
+      <div class="panel" style="min-width:220px">
+        <div>Turn: <strong id="ch-turn">White</strong></div>
+        <div class="controls" style="margin-top:12px">
+          <button class="btn small" id="chReset">Reset Board</button>
+          <button class="btn small" id="chFlip">Flip Board</button>
+        </div>
+        <div class="small-muted" style="margin-top:12px">Notes: Pawn promotion auto to Queen. No castling/en-passant yet.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section id="profile" class="panel" style="margin-top:18px;display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><h2 style="margin:0">Profile</h2><div class="muted">Saved stats for current username</div></div>
+      <div><button class="btn small" onclick="showSection('home')">Back Home</button></div>
+    </div>
+
+    <div style="margin-top:12px" class="profile-row">
+      <div class="stat"><div class="muted">Username</div><div id="pf-username" style="font-weight:800">-</div></div>
+      <div class="stat"><div class="muted">Best CPS</div><div id="pf-bestcps">-</div></div>
+      <div class="stat"><div class="muted">Best Typing (WPM)</div><div id="pf-besttyping">-</div></div>
+      <div style="margin-left:auto"><button class="btn small" id="exportBtn">Export Data</button></div>
+    </div>
+  </section>
+
+  <div style="margin-top:22px" class="muted center">MiniPlay — everything local. Want online multiplayer later? I can add it.</div>
+</div>
+
+<!-- Modal container -->
+<div id="modal" class="hidden"></div>
+
+<script>
+/* ----------------- App Boot & Storage ----------------- */
+const LOADER = document.getElementById('loader');
+const APP = document.getElementById('app');
+const modalRoot = document.getElementById('modal');
+
+window.addEventListener('load', ()=>{
+  setTimeout(()=>{ LOADER.style.display='none'; APP.style.display='block'; initApp(); }, 800);
+});
+
+function saveUserData(username, data){
+  const key = 'miniplay_user_' + username;
+  localStorage.setItem(key, JSON.stringify(data));
+}
+function loadUserData(username){
+  const key = 'miniplay_user_' + username;
+  const raw = localStorage.getItem(key);
+  return raw ? JSON.parse(raw) : { bestCPS:0, bestWPM:0, history:[] };
+}
+function currentUserKey(){ return document.__currentUser || null; }
+
+/* ----------------- Navigation (sections) ----------------- */
+function showSection(id){
+  // hide all sections and show requested
+  document.querySelectorAll('section').forEach(s=>s.style.display='none');
+  if(id === 'home'){ document.getElementById('home').style.display='block'; window.location.hash=''; return; }
+  const el = document.getElementById(id);
+  if(el) el.style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+  // update hash
+  window.location.hash = id;
+}
+
+/* ----------------- Login ----------------- */
+function initApp(){
+  const usernameInput = document.getElementById('usernameInput');
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const who = document.getElementById('who');
+
+  // restore last logged user
+  const last = localStorage.getItem('miniplay_last_user');
+  if(last){
+    setCurrentUser(last);
+    usernameInput.value = last;
+  }
+
+  loginBtn.addEventListener('click', ()=>{
+    const name = usernameInput.value.trim();
+    if(!name){ alert('Enter a username'); return; }
+    setCurrentUser(name);
+    localStorage.setItem('miniplay_last_user', name);
+    showSection('home');
+  });
+
+  logoutBtn.addEventListener('click', ()=>{
+    clearCurrentUser();
+    usernameInput.value='';
+    showSection('home');
+  });
+
+  // nav by hash
+  if(window.location.hash){
+    const id = window.location.hash.replace('#','');
+    if(id && document.getElementById(id)) showSection(id);
+  } else showSection('home');
+
+  // update UI for user
+  updateUserUI();
+  initCPS(); initPractice(); initTyping(); initChess(); initProfile();
+}
+
+function setCurrentUser(name){
+  document.__currentUser = name;
+  updateUserUI();
+}
+function clearCurrentUser(){
+  document.__currentUser = null;
+  updateUserUI();
+}
+function updateUserUI(){
+  const who = document.getElementById('who');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const loginBtn = document.getElementById('loginBtn');
+  const usernameInput = document.getElementById('usernameInput');
+  const pfuser = document.getElementById('pf-username');
+
+  if(document.__currentUser){
+    who.textContent = 'Signed in: ' + document.__currentUser;
+    logoutBtn.style.display = 'inline-block';
+    loginBtn.style.display = 'inline-block';
+    usernameInput.style.display='inline-block';
+    // load profile quick
+    const data = loadUserData(document.__currentUser);
+    document.getElementById('pf-bestcps').textContent = data.bestCPS ? data.bestCPS : '-';
+    document.getElementById('pf-besttyping').textContent = data.bestWPM ? data.bestWPM : '-';
+    pfuser.textContent = document.__currentUser;
+  } else {
+    who.textContent = 'Not signed in';
+    logoutBtn.style.display='none';
+    pfuser.textContent = '-';
+  }
+}
+
+/* ----------------- Modal ----------------- */
+function showModal(html){
+  modalRoot.innerHTML = `<div class="modal-backdrop"><div class="modal">${html}</div></div>`;
+  modalRoot.classList.remove('hidden');
+}
+function closeModal(){ modalRoot.innerHTML=''; modalRoot.classList.add('hidden'); }
+
+/* ================= CPS Test (timed) ================= */
+function initCPS(){
+  const target = document.getElementById('cps-target');
+  const counter = document.getElementById('cps-counter');
+  const status = document.getElementById('cps-status');
+  const bar = document.getElementById('cps-bar');
+  const durationSel = document.getElementById('cpsDuration');
+  const methodSel = document.getElementById('cpsMethod');
+  const resetBtn = document.getElementById('cpsReset');
+
+  let state = {running:false,count:0,start:0,duration:5,lastButton:null,interval:null};
+
+  // reset UI
+  function uiReset(){
+    state.running=false; state.count=0; state.lastButton=null; if(state.interval) clearInterval(state.interval);
+    counter.textContent='0'; status.textContent='Ready — click inside to start'; bar.style.width='0%';
+  }
+  uiReset();
+
+  // start on first click
+  target.addEventListener('mousedown', (e)=>{
+    e.preventDefault();
+    const method = methodSel.value;
+    const btn = e.button; //0 left, 2 right
+    // method match check
+    let valid=false;
+    if(method==='left' && btn===0) valid=true;
+    if(method==='right' && btn===2) valid=true;
+    if(method==='space') valid=false;
+    if(method==='alternate'){ if(state.lastButton===null || state.lastButton!==btn){ state.lastButton=btn; valid=true } else { state.lastButton=btn; valid=false } }
+    if(method!=='space' && !valid) return;
+
+    if(!state.running){
+      state.duration = Number(durationSel.value);
+      state.start = Date.now();
+      state.count = 0;
+      state.running = true;
+      status.textContent = state.duration.toFixed(1) + 's left';
+      state.interval = setInterval(()=>tick(), 50);
+      // auto-stop safety
+      setTimeout(()=>{ if(state.running) endTest(); }, state.duration*1000 + 60);
+    }
+    // register click
+    state.count++;
+    counter.textContent = state.count;
+    bar.style.width = ((Date.now()-state.start)/1000 / state.duration * 100) + '%';
+  });
+
+  // key space method
+  window.addEventListener('keydown', (e)=>{
+    if(methodSel.value==='space' && e.code==='Space'){
+      e.preventDefault();
+      if(!state.running){
+        state.duration = Number(durationSel.value);
+        state.start = Date.now();
+        state.count = 0;
+        state.running = true;
+        status.textContent = state.duration.toFixed(1) + 's left';
+        state.interval = setInterval(()=>tick(), 50);
+        setTimeout(()=>{ if(state.running) endTest(); }, state.duration*1000 + 60);
+      }
+      state.count++;
+      counter.textContent = state.count;
+      bar.style.width = ((Date.now()-state.start)/1000 / state.duration * 100) + '%';
+    }
+  });
+
+  function tick(){
+    if(!state.running) return;
+    const elapsed = (Date.now()-state.start)/1000;
+    const left = Math.max(0, state.duration - elapsed);
+    status.textContent = left.toFixed(1) + 's left';
+    bar.style.width = ((elapsed/state.duration)*100) + '%';
+    if(left <= 0) endTest();
+  }
+
+  function endTest(){
+    if(state.interval) clearInterval(state.interval);
+    state.running=false;
+    const cps = (state.count / state.duration);
+    const cpsRound = Math.round(cps*100)/100;
+    // rarity
+    let rarity = 'Common';
+    if(cps >= 5) rarity='Uncommon';
+    if(cps >= 8) rarity='Rare';
+    if(cps >= 12) rarity='Epic';
+    if(cps >= 16) rarity='Legendary';
+    if(cps >= 20) rarity='Mythic';
+
+    // save for current user
+    if(document.__currentUser){
+      const data = loadUserData(document.__currentUser);
+      if(!data.bestCPS || cpsRound > data.bestCPS){ data.bestCPS = cpsRound; }
+      data.history = data.history || [];
+      data.history.push({type:'cps', value:cpsRound, duration:state.duration, at:Date.now()});
+      saveUserData(document.__currentUser, data);
+      updateUserUI();
+    }
+
+    // show modal with breakdown
+    showModal(`<h2>Results</h2>
+      <div class="muted">Duration: ${state.duration}s</div>
+      <div style="font-size:26px;font-weight:900;margin-top:8px">${cpsRound} CPS</div>
+      <div class="muted" style="margin-top:8px">Rarity: <strong>${rarity}</strong></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+        <button class="btn small" onclick="closeModal();">Close</button>
+        <button class="btn small" onclick="copyToClipboard('${cpsRound} CPS (${state.duration}s)');">Copy</button>
+      </div>`);
+
+    // reset UI
+    counter.textContent = '0'; status.textContent = 'Finished — close result'; bar.style.width='100%';
+  }
+
+  function copyToClipboard(text){
+    navigator.clipboard?.writeText(text).then(()=>alert('Copied to clipboard')).catch(()=>alert('Copy failed'));
+  }
+
+  resetBtn.addEventListener('click', ()=>{ uiReset(); });
+}
+
+/* ================= CPS Practice (warmup) ================= */
+function initPractice(){
+  const target = document.getElementById('practice-target');
+  const countEl = document.getElementById('practice-count');
+  const resetBtn = document.getElementById('practiceReset');
+  const toggleBtn = document.getElementById('practiceToggle');
+
+  let clicks=0; let method='left';
+  function update(){
+    countEl.textContent = clicks;
+    toggleBtn.textContent = 'Method: ' + method.charAt(0).toUpperCase()+method.slice(1);
+  }
+
+  target.addEventListener('mousedown', e=>{
+    e.preventDefault();
+    if(method==='left' && e.button===0){ clicks++; update(); }
+    if(method==='right' && e.button===2){ clicks++; update(); }
+    if(method==='alternate'){
+      // simple alternate behavior: count both left and right as clicks but must alternate
+      if(typeof target._last === 'undefined' || target._last !== e.button){ clicks++; target._last = e.button; update(); } else { target._last = e.button; }
+    }
+  });
+
+  window.addEventListener('keydown', e=>{
+    if(method==='space' && e.code==='Space'){ e.preventDefault(); clicks++; update(); }
+  });
+
+  resetBtn.addEventListener('click', ()=>{ clicks=0; update(); });
+  toggleBtn.addEventListener('click', ()=>{
+    if(method==='left') method='space';
+    else if(method==='space') method='right';
+    else if(method==='right') method='alternate';
+    else method='left';
+    update();
+  });
+
+  update();
+}
+
+/* ================= Typing ================= */
+function initTyping(){
+  const targetBox = document.getElementById('targetBox');
+  const input = document.getElementById('typeInput');
+  const startBtn = document.getElementById('typeStart');
+  const stopBtn = document.getElementById('typeStop');
+  const durationSel = document.getElementById('typeDuration');
+  const wpmEl = document.getElementById('wpm');
+  const kpsEl = document.getElementById('kps');
+  const accEl = document.getElementById('acc');
+
+  // sample sentences (expand as needed)
+  const sentences = [
+    "the quick brown fox jumps over the lazy dog",
+    "practice typing to improve speed and accuracy",
+    "build your own games not copy others",
+    "focus on accuracy first then speed will come",
+    "this hub is local and saves your best results"
+  ];
+
+  let state = {running:false,startAt:0,duration:30,target:'',typed:'',timer:null,keys:0,mistakes:0};
+
+  function pickTarget(){
+    state.target = sentences[Math.floor(Math.random()*sentences.length)];
+    // animate reveal of the target (fade-in char by char)
+    targetBox.innerHTML = '';
+    for(let i=0;i<state.target.length;i++){
+      const span = document.createElement('span');
+      span.className = 'target-animated ch-next';
+      span.textContent = state.target[i];
+      targetBox.appendChild(span);
+    }
+    // staggered reveal
+    const chars = targetBox.querySelectorAll('.target-animated');
+    chars.forEach((sp, idx)=>{
+      sp.style.opacity = '0';
+      setTimeout(()=>{ sp.style.opacity='1'; sp.style.transform='translateY(0)'; sp.style.transition='opacity .18s ease, transform .18s ease'; }, idx*12);
+    });
+  }
+
+  function renderTarget(){
+    // Render colored spans based on typed chars
+    const t = state.target;
+    const p = state.typed;
+    let html = '';
+    for(let i=0;i<t.length;i++){
+      const ch = t[i];
+      if(i < p.length){
+        const typedChar = p[i];
+        if(typedChar === ch) html += `<span class="ch-correct">${escape(ch)}</span>`;
+        else {
+          // close check (charCode diff <=1)
+          if(typedChar && ch && Math.abs(typedChar.charCodeAt(0) - ch.charCodeAt(0)) <= 1) html += `<span class="ch-close">${escape(ch)}</span>`;
+          else html += `<span class="ch-wrong">${escape(ch)}</span>`;
+        }
+      } else {
+        html += `<span class="ch-next">${escape(ch)}</span>`;
+      }
+    }
+    targetBox.innerHTML = html;
+  }
+
+  function escape(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function updateMetrics(){
+    const elapsed = Math.max(1, Math.floor((Date.now()-state.startAt)/1000));
+    const chars = state.typed.length;
+    const wpm = Math.round((chars/5) / (elapsed/60));
+    const kps = (state.keys / elapsed).toFixed(2);
+    const acc = chars? Math.max(0, Math.round(((chars - state.mistakes)/chars)*100)) : 100;
+    wpmEl.textContent = isFinite(wpm)? wpm:0;
+    kpsEl.textContent = isFinite(kps)? kps:'0.00';
+    accEl.textContent = isFinite(acc)? acc+'%':'100%';
+  }
+
+  function startTest(){
+    state.duration = Number(durationSel.value);
+    pickTarget();
+    state.typed=''; state.keys=0; state.mistakes=0; state.running=true; state.startAt = Date.now();
+    input.value=''; input.disabled=false; input.focus();
+    if(state.timer) clearInterval(state.timer);
+    state.timer = setInterval(()=>{
+      const elapsed = Math.floor((Date.now()-state.startAt)/1000);
+      if(elapsed >= state.duration){ finishTest(); }
+      updateMetrics();
+    }, 200);
+  }
+
+  function stopTest(){ if(state.timer) clearInterval(state.timer); state.running=false; input.disabled=true; updateMetrics(); alert('Test stopped'); maybeSaveTyping(); renderSkipped(); }
+
+  function finishTest(){
+    if(state.timer) clearInterval(state.timer);
+    state.running=false;
+    input.disabled=true;
+    updateMetrics();
+    renderSkipped(); // show skipped characters as yellow
+    // compute final WPM
+    const elapsed = Math.max(1, Math.floor((Date.now()-state.startAt)/1000));
+    const finalWPM = Math.round((state.typed.length/5) / (elapsed/60));
+    // save per user
+    if(document.__currentUser){
+      const data = loadUserData(document.__currentUser);
+      if(!data.bestWPM || finalWPM > data.bestWPM) data.bestWPM = finalWPM;
+      data.history = data.history || [];
+      data.history.push({type:'typing', wpm:finalWPM, kps: (state.keys/elapsed).toFixed(2), acc:accEl.textContent, at:Date.now()});
+      saveUserData(document.__currentUser, data);
+      updateUserUI();
+    }
+
+    // popup
+    showModal(`<h2>Typing Result</h2>
+      <div class="muted">Duration: ${state.duration}s</div>
+      <div style="font-size:20px;font-weight:800;margin-top:8px">${finalWPM} WPM</div>
+      <div class="muted" style="margin-top:8px">KPS: ${kpsEl.textContent} — Accuracy: ${accEl.textContent}</div>
+      <div style="margin-top:12px"><button class="btn small" onclick="closeModal();">Close</button></div>`);
+  }
+
+  function renderSkipped(){
+    // At end, any characters beyond typed length are considered skipped => color them yellow
+    const t = state.target;
+    const p = state.typed;
+    let html='';
+    for(let i=0;i<t.length;i++){
+      const ch = t[i];
+      if(i < p.length){
+        if(p[i] === ch) html += `<span class="ch-correct">${escape(ch)}</span>`;
+        else if(p[i] && Math.abs(p[i].charCodeAt(0)-ch.charCodeAt(0)) <=1) html += `<span class="ch-close">${escape(ch)}</span>`;
+        else html += `<span class="ch-wrong">${escape(ch)}</span>`;
+      } else {
+        html += `<span class="ch-skip">${escape(ch)}</span>`;
+      }
+    }
+    targetBox.innerHTML = html;
+  }
+
+  startBtn.addEventListener('click', ()=>{
+    startTest();
+  });
+  stopBtn.addEventListener('click', ()=>{ stopTest(); });
+
+  // input listener
+  input.addEventListener('input', (e)=>{
+    if(!state.running) return;
+    const val = e.target.value;
+    // update keys pressed
+    if(val.length >= state.typed.length) state.keys += val.length - state.typed.length;
+    else state.keys += 0; // deletions don't add
+    // compare
+    let mistakes = 0;
+    for(let i=0;i<val.length;i++){ if(val[i] !== state.target[i]) mistakes++; }
+    state.mistakes = mistakes;
+    state.typed = val;
+    renderTarget();
+    updateMetrics();
+  });
+
+  // disable enter submit on input
+  input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') e.preventDefault(); });
+
+}
+
+/* ================= Chess ================= */
+function initChess(){
+  const boardEl = document.getElementById('board');
+  const turnEl = document.getElementById('ch-turn');
+  const resetBtn = document.getElementById('chReset');
+  const flipBtn = document.getElementById('chFlip');
+
+  const PIECES = {
+    r:'♜', n:'♞', b:'♝', q:'♛', k:'♚', p:'♟',
+    R:'♖', N:'♘', B:'♗', Q:'♕', K:'♔', P:'♙'
+  };
+
+  let board = [];
+  let selected = null;
+  let whiteTurn = true;
+  let flipped = false;
+
+  function initBoard(){
+    const start = [
+      ['r','n','b','q','k','b','n','r'],
+      ['p','p','p','p','p','p','p','p'],
+      ['','','','','','','',''],
+      ['','','','','','','',''],
+      ['','','','','','','',''],
+      ['','','','','','','',''],
+      ['P','P','P','P','P','P','P','P'],
+      ['R','N','B','Q','K','B','N','R']
+    ];
+    board = start.map(r=>r.slice());
+    whiteTurn = true; selected = null; render();
+  }
+
+  function render(){
+    boardEl.innerHTML = '';
+    const rows = [...Array(8).keys()];
+    if(flipped) rows.reverse();
+    rows.forEach(r=>{
+      const cols = [...Array(8).keys()];
+      if(flipped) cols.reverse();
+      cols.forEach(c=>{
+        const cell = document.createElement('div');
+        const isLight = ((r + c) % 2 === 0);
+        cell.className = 'square ' + (isLight ? 'light' : 'dark');
+        const piece = board[r][c];
+        cell.dataset.r = r; cell.dataset.c = c;
+        cell.innerHTML = piece ? `<span class="piece">${PIECES[piece] || ''}</span>` : '';
+        cell.addEventListener('click', onCellClick);
+        boardEl.appendChild(cell);
+      });
+    });
+    turnEl.textContent = whiteTurn ? 'White' : 'Black';
+  }
+
+  function inBounds(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
+  function isWhitePiece(ch){ return ch && ch === ch.toUpperCase(); }
+  function pathClear(sr,sc,tr,tc){
+    const dr = Math.sign(tr - sr), dc = Math.sign(tc - sc);
+    let r = sr + dr, c = sc + dc;
+    while(r !== tr || c !== tc){
+      if(board[r][c]) return false;
+      r += dr; c += dc;
+    }
+    return true;
+  }
+
+  function canMove(sr,sc,tr,tc){
+    const piece = board[sr][sc];
+    if(!piece) return false;
+    if(isWhitePiece(piece) !== whiteTurn) return false;
+    const dest = board[tr][tc];
+    if(dest && (isWhitePiece(dest) === isWhitePiece(piece))) return false;
+    const dr = tr - sr, dc = tc - sc;
+    const ap = piece.toLowerCase();
+
+    if(ap === 'p'){
+      const forward = isWhitePiece(piece) ? -1 : 1;
+      const startRow = isWhitePiece(piece) ? 6 : 1;
+      if(dc === 0 && dr === forward && !board[tr][tc]) return true;
+      if(dc === 0 && dr === 2*forward && sr === startRow && !board[sr+forward][sc] && !board[tr][tc]) return true;
+      if(Math.abs(dc) === 1 && dr === forward && board[tr][tc]) return true;
+      return false;
+    }
+    if(ap === 'n'){ if((Math.abs(dr)===2 && Math.abs(dc)===1) || (Math.abs(dr)===1 && Math.abs(dc)===2)) return true; return false; }
+    if(ap === 'b'){ if(Math.abs(dr)!==Math.abs(dc)) return false; return pathClear(sr,sc,tr,tc); }
+    if(ap === 'r'){ if(dr!==0 && dc!==0) return false; return pathClear(sr,sc,tr,tc); }
+    if(ap === 'q'){ if(dr===0 || dc===0 || Math.abs(dr)===Math.abs(dc)) return pathClear(sr,sc,tr,tc); return false; }
+    if(ap === 'k'){ if(Math.abs(dr)<=1 && Math.abs(dc)<=1) return true; return false; }
+    return false;
+  }
+
+  function onCellClick(e){
+    const r = Number(e.currentTarget.dataset.r), c = Number(e.currentTarget.dataset.c);
+    const p = board[r][c];
+    if(selected){
+      const [sr,sc] = selected;
+      if(canMove(sr,sc,r,c)){
+        doMove(sr,sc,r,c);
+        selected = null;
+        whiteTurn = !whiteTurn;
+        render();
+      } else {
+        if(p && isWhitePiece(p) === whiteTurn){ selected=[r,c]; highlight(r,c); } else { selected=null; render(); }
+      }
+    } else {
+      if(p && isWhitePiece(p) === whiteTurn){ selected=[r,c]; highlight(r,c); }
+    }
+  }
+
+  function highlight(r,c){
+    const cells = boardEl.querySelectorAll('.square');
+    cells.forEach(cell=>cell.classList.remove('highlight'));
+    const idx = (flipped ? (7-r)*8 + (7-c) : r*8 + c);
+    const chosen = cells[idx];
+    if(chosen) chosen.classList.add('highlight');
+  }
+
+  function doMove(sr,sc,tr,tc){
+    let piece = board[sr][sc];
+    board[tr][tc] = piece;
+    board[sr][sc] = '';
+    // pawn promotion
+    if(piece.toLowerCase()==='p'){
+      if((piece === 'P' && tr === 0) || (piece === 'p' && tr === 7)){
+        board[tr][tc] = (piece === 'P') ? 'Q' : 'q';
+      }
+    }
+  }
+
+  resetBtn.addEventListener('click', ()=>{ initBoard(); });
+  flipBtn.addEventListener('click', ()=>{ flipped = !flipped; render(); });
+
+  initBoard();
+}
+
+/* ================= Profile ================= */
+function initProfile(){
+  const exportBtn = document.getElementById('exportBtn');
+  exportBtn.addEventListener('click', ()=>{
+    if(!document.__currentUser){ alert('Sign in first'); return; }
+    const data = loadUserData(document.__currentUser);
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `${document.__currentUser}_miniplay.json`; document.body.appendChild(a);
+    a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+}
+</script>
 </body>
 </html>
