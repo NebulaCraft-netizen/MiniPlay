@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CPS Test</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="cps-test.html">CPS Test</a>
+    <a href="cps-practice.html">CPS Practice</a>
+    <a href="typing.html">Typing Practice</a>
+    <a href="minigames.html">Mini Games</a>
+  </nav>
+
+  <h1>CPS Test</h1>
+  <p>Click the button as fast as you can in 5 seconds!</p>
+  <button id="click-btn">Click Me!</button>
+  <p id="result"></p>
+
+  <script>
+    let count = 0;
+    let started = false;
+    const btn = document.getElementById("click-btn");
+    const result = document.getElementById("result");
+
+    btn.onclick = () => {
+      if (!started) {
+        started = true;
+        count = 0;
+        result.textContent = "Go!";
+        setTimeout(() => {
+          result.textContent = "Your CPS: " + (count / 5).toFixed(2);
+          started = false;
+        }, 5000);
+      }
+      if (started) count++;
+    };
+  </script>
+</body>
+</html>
