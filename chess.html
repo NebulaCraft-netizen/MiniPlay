@@ -1,1 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chess</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>♟️ Chess (2 Players)</h1>
+    <p>Play with your friend on the same device.</p>
+    <div id="board" class="board"></div>
+    <button class="btn" onclick="window.location.href='index.html'">⬅ Back</button>
+  </div>
 
+  <script>
+    const board = document.getElementById("board");
+    const size = 8;
+
+    const pieces = {
+      R: "♖", N: "♘", B: "♗", Q: "♕", K: "♔", P: "♙",
+      r: "♜", n: "♞", b: "♝", q: "♛", k: "♚", p: "♟︎"
+    };
+
+    let layout = [
+      "rnbqkbnr",
+      "pppppppp",
+      "........",
+      "........",
+      "........",
+      "........",
+      "PPPPPPPP",
+      "RNBQKBNR"
+    ];
+
+    function renderBoard() {
+      board.innerHTML = "";
+      for (let row = 0; row < size; row++) {
+        for (let col = 0; col < size; col++) {
+          const square = document.createElement("div");
+          square.className = "square " + ((row + col) % 2 === 0 ? "light" : "dark");
+          const piece = layout[row][col];
+          if (piece !== ".") {
+            square.textContent = pieces[piece];
+          }
+          board.appendChild(square);
+        }
+      }
+    }
+
+    renderBoard();
+  </script>
+</body>
+</html>
