@@ -1,42 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CPS Test</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typing Practice</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="cps-test.html">CPS Test</a>
-    <a href="cps-practice.html">CPS Practice</a>
-    <a href="typing.html">Typing Practice</a>
-    <a href="minigames.html">Mini Games</a>
-  </nav>
-
-  <h1>CPS Test</h1>
-  <p>Click the button as fast as you can in 5 seconds!</p>
-  <button id="click-btn">Click Me!</button>
-  <p id="result"></p>
+  <div class="container">
+    <h1>⌨️ Typing Practice</h1>
+    <div class="card">
+      <div id="targetText" class="typing-area"></div>
+      <input type="text" id="typingInput" placeholder="Start typing..." />
+      <p id="feedback"></p>
+    </div>
+    <button class="btn" onclick="window.location.href='index.html'">⬅ Back</button>
+  </div>
 
   <script>
-    let count = 0;
-    let started = false;
-    const btn = document.getElementById("click-btn");
-    const result = document.getElementById("result");
+    const texts = [
+      "The quick brown fox jumps over the lazy dog",
+      "Coding is fun when you build your own games",
+      "Practice makes perfect in CPS and typing tests"
+    ];
+    const target = texts[Math.floor(Math.random() * texts.length)];
+    const targetTextDiv = document.getElementById("targetText");
+    const input = document.getElementById("typingInput");
+    const feedback = document.getElementById("feedback");
 
-    btn.onclick = () => {
-      if (!started) {
-        started = true;
-        count = 0;
-        result.textContent = "Go!";
-        setTimeout(() => {
-          result.textContent = "Your CPS: " + (count / 5).toFixed(2);
-          started = false;
-        }, 5000);
+    targetTextDiv.textContent = target;
+
+    let startTime;
+    input.addEventListener("input", () => {
+      if (!startTime) startTime = new Date();
+      const typed = input.value;
+      let output = "";
+
+      for (let i = 0; i < target.length; i++) {
+        if (i < typed.length) {
+          if (typed[i] === target[i]) {
+            output += `<span style="color:lime">${target[i]}</span>`;
+          } else {
+            output += `<span style="color:red">${target[i]}</span>`;
+          }
+        } else {
+          output += target[i];
+        }
       }
-      if (started) count++;
-    };
+      targetTextDiv.innerHTML = output;
+
+      if (typed === target) {
+        const timeTaken = ((new Date() - startTime) / 1000).toFixed(2);
+        feedback.textContent = `✅ Done! Time: ${timeTaken}s`;
+
+        // Save best typing
+        let bestTyping = localStorage.getItem("bestTyping");
+        if (!bestTyping || timeTaken < bestTyping) {
+          localStorage.setItem("bestTyping", timeTaken);
+        }
+      }
+    });
   </script>
 </body>
 </html>
