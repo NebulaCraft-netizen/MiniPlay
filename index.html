@@ -1,21 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>MiniPlay - Home</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GameHub</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="cps-test.html">CPS Test</a>
-    <a href="cps-practice.html">CPS Practice</a>
-    <a href="typing.html">Typing Practice</a>
-    <a href="minigames.html">Mini Games</a>
-  </nav>
+  <!-- Loader -->
+  <div id="loader">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
 
-  <h1>Welcome to MiniPlay</h1>
-  <p>Practice your clicking, typing, and more!</p>
-  <a href="cps-test.html"><button>Get Started</button></a>
+  <!-- Main content -->
+  <div id="app" class="hidden">
+    <div class="container">
+      <h1>🎮 GameHub</h1>
+      <div id="login-section">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Enter username" />
+        <button class="btn" onclick="login()">Login</button>
+      </div>
+
+      <div id="home-section" class="hidden">
+        <h2>Welcome, <span id="playerName"></span>!</h2>
+        <div class="card">
+          <h3>CPS Test</h3>
+          <p>Test your clicks per second speed.</p>
+          <a href="cps.html" class="btn">Start CPS Test</a>
+        </div>
+        <div class="card">
+          <h3>Typing Practice</h3>
+          <p>Improve your typing speed and accuracy.</p>
+          <a href="typing.html" class="btn">Start Typing</a>
+        </div>
+        <div class="card">
+          <h3>Chess</h3>
+          <p>Play chess with your friend on the same device.</p>
+          <a href="chess.html" class="btn">Play Chess</a>
+        </div>
+        <div class="card">
+          <h3>Profile</h3>
+          <p>View your stats and saved data.</p>
+          <a href="profile.html" class="btn">View Profile</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
