@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Typing Practice</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="cps-test.html">CPS Test</a>
+    <a href="cps-practice.html">CPS Practice</a>
+    <a href="typing.html">Typing Practice</a>
+    <a href="minigames.html">Mini Games</a>
+  </nav>
+
+  <h1>Typing Practice</h1>
+  <p>Type this text as fast as you can:</p>
+  <p id="target">hello world typing speed test</p>
+  <input type="text" id="input" placeholder="Start typing here..." />
+  <p id="feedback"></p>
+
+  <script>
+    const target = document.getElementById("target").textContent;
+    const input = document.getElementById("input");
+    const feedback = document.getElementById("feedback");
+    let startTime;
+
+    input.addEventListener("focus", () => {
+      startTime = new Date().getTime();
+    });
+
+    input.addEventListener("input", () => {
+      if (input.value === target) {
+        const endTime = new Date().getTime();
+        const seconds = (endTime - startTime) / 1000;
+        feedback.textContent = "You finished in " + seconds.toFixed(2) + "s";
+      }
+    });
+  </script>
+</body>
+</html>
