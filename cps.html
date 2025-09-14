@@ -1,30 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CPS Practice</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPS Test</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="cps-test.html">CPS Test</a>
-    <a href="cps-practice.html">CPS Practice</a>
-    <a href="typing.html">Typing Practice</a>
-    <a href="minigames.html">Mini Games</a>
-  </nav>
+  <div class="container">
+    <h1>🖱️ CPS Test</h1>
+    <p>Click inside the box as fast as you can! You have 5 seconds.</p>
 
-  <h1>CPS Practice</h1>
-  <p>Click the button to practice your speed without a timer.</p>
-  <button id="practice-btn">Click Me!</button>
-  <p>Clicks: <span id="count">0</span></p>
+    <div id="cpsBox" class="card target">Click here to start</div>
+
+    <button class="btn" onclick="window.location.href='index.html'">⬅ Back</button>
+  </div>
 
   <script>
     let clicks = 0;
-    document.getElementById("practice-btn").onclick = () => {
+    let timer;
+    let running = false;
+
+    const box = document.getElementById("cpsBox");
+
+    box.addEventListener("click", () => {
+      if (!running) {
+        running = true;
+        clicks = 0;
+        box.textContent = "Click!";
+        timer = setTimeout(endTest, 5000);
+      }
       clicks++;
-      document.getElementById("count").textContent = clicks;
-    };
+    });
+
+    function endTest() {
+      running = false;
+      const cps = (clicks / 5).toFixed(2);
+
+      let rarity;
+      if (cps < 5) rarity = "Common";
+      else if (cps < 8) rarity = "Rare";
+      else if (cps < 12) rarity = "Epic";
+      else rarity = "Legendary";
+
+      alert(`⏱ Time's up!\nYour CPS: ${cps}\nRarity: ${rarity}`);
+
+      // Save best CPS
+      let best = localStorage.getItem("bestCPS") || 0;
+      if (cps > best) {
+        localStorage.setItem("bestCPS", cps);
+      }
+
+      box.textContent = "Click here to start";
+    }
   </script>
 </body>
 </html>
